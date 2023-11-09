@@ -10,7 +10,8 @@ import numpy as np
 import torch as th
 import torch.distributed as dist
 
-from guided_diffusion import dist_util, logger
+#from guided_diffusion import dist_util, logger
+from guided_diffusion import logger
 from guided_diffusion.script_util import (
     NUM_CLASSES,
     model_and_diffusion_defaults,
@@ -23,17 +24,25 @@ from guided_diffusion.script_util import (
 def main():
     args = create_argparser().parse_args()
 
-    dist_util.setup_dist()
+    device = th.device('cuda')
+
+    #dist_util.setup_dist()
     logger.configure()
 
     logger.log("creating model and diffusion...")
     model, diffusion = create_model_and_diffusion(
         **args_to_dict(args, model_and_diffusion_defaults().keys())
     )
+    #model.load_state_dict(
+    #    dist_util.load_state_dict(args.model_path, map_location="cpu")
+    #)
     model.load_state_dict(
-        dist_util.load_state_dict(args.model_path, map_location="cpu")
+        args.model_path, map_location="cpu"
     )
-    model.to(dist_util.dev())
+
+    #model.to(dist_util.dev())
+    model.to(device)
+
     if args.use_fp16:
         model.convert_to_fp16()
     model.eval()
